@@ -58,11 +58,8 @@ public class Main {
                     promise.fail(e);
                 }
             }, res -> {
-                if (res.succeeded()) {
                     routingContext.response().setStatusCode(200).end(res.result());
-                } else {
-                    routingContext.response().setStatusCode(500).end("Failed to fetch data");
-                }
+
             });
         }
 
@@ -93,11 +90,9 @@ public class Main {
                     .execute()
                     .toCompletableFuture()
                     .thenAccept(response -> {
-                        if (response.getStatusCode() == 200) {
+//                        if (response.getStatusCode() == 200) {
                             future.complete(response.getResponseBody());
-                        } else {
-                            future.completeExceptionally(new RuntimeException("Failed to fetch summary data"));
-                        }
+
                     }).exceptionally(ex -> {
                         future.completeExceptionally(ex);
                         return null;
@@ -116,7 +111,7 @@ public class Main {
                     .toCompletableFuture()
                     .thenAccept(response -> {
 
-                            future.complete(response.getResponseBody());
+                        future.complete(response.getResponseBody());
 
                     }).exceptionally(ex -> {
                         future.completeExceptionally(ex);
