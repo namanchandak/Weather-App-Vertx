@@ -11,7 +11,9 @@ import org.asynchttpclient.Dsl;
 import org.asynchttpclient.Response;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class Main {
 
@@ -49,50 +51,63 @@ public class Main {
         }
 
         private void handleGetSummaryResource(RoutingContext routingContext) {
+            Map<String, String> headers = routingContext.request().headers().entries().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
             Vertx vertx = routingContext.vertx();
             vertx.<String>executeBlocking(promise -> {
                 try {
-                    String response = fetchSummaryApiData().join(); // Use CompletableFuture's join
+                    String response = fetchSummaryApiData(headers).join(); // Use CompletableFuture's join
                     promise.complete(response);
                 } catch (Exception e) {
                     promise.fail(e);
                 }
             }, res -> {
+//                if (res.succeeded()) {
                     routingContext.response().setStatusCode(200).end(res.result());
-
+//                } else {
+//                    routingContext.response().setStatusCode(500).end("Failed to fetch data");
+//                }
             });
         }
 
         private void handleGetHourResource(RoutingContext routingContext) {
+            Map<String, String> headers = routingContext.request().headers().entries().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
             Vertx vertx = routingContext.vertx();
             vertx.<String>executeBlocking(promise -> {
                 try {
-                    String response = fetchHourApiData().join(); // Use CompletableFuture's join
+                    String response = fetchHourApiData(headers).join(); // Use CompletableFuture's join
                     promise.complete(response);
                 } catch (Exception e) {
                     promise.fail(e);
                 }
             }, res -> {
-                if (res.succeeded()) {
+//                if (res.succeeded()) {
                     routingContext.response().setStatusCode(200).end(res.result());
-                } else {
-                    routingContext.response().setStatusCode(500).end("Failed to fetch data");
-                }
+//                } else {
+//                    routingContext.response().setStatusCode(500).end("Failed to fetch data");
+//                }
             });
         }
 
-        private CompletableFuture<String> fetchSummaryApiData() {
+        private CompletableFuture<String> fetchSummaryApiData(Map<String, String> headers) {
             CompletableFuture<String> future = new CompletableFuture<>();
 
-            asyncHttpClient.prepareGet("https://forecast9.p.rapidapi.com/rapidapi/forecast/Berlin/summary/")
-                    .setHeader("x-rapidapi-key", "14afbecc82mshc0bf7999f7591d4p1e2789jsna173467eac5b")
-                    .setHeader("x-rapidapi-host", "forecast9.p.rapidapi.com")
-                    .execute()
+            // Build the request with dynamic headers
+            org.asynchttpclient.RequestBuilder requestBuilder = new org.asynchttpclient.RequestBuilder("GET")
+                    .setUrl("https://forecast9.p.rapidapi.com/rapidapi/forecast/Berlin/summary/");
+            headers.forEach(requestBuilder::addHeader);
+
+            asyncHttpClient.executeRequest(requestBuilder.build())
                     .toCompletableFuture()
                     .thenAccept(response -> {
 //                        if (response.getStatusCode() == 200) {
                             future.complete(response.getResponseBody());
-
+//                        } else {
+//                            future.completeExceptionally(new RuntimeException("Failed to fetch summary data"));
+//                        }
                     }).exceptionally(ex -> {
                         future.completeExceptionally(ex);
                         return null;
@@ -101,18 +116,22 @@ public class Main {
             return future;
         }
 
-        private CompletableFuture<String> fetchHourApiData() {
+        private CompletableFuture<String> fetchHourApiData(Map<String, String> headers) {
             CompletableFuture<String> future = new CompletableFuture<>();
 
-            asyncHttpClient.prepareGet("https://forecast9.p.rapidapi.com/rapidapi/forecast/Berlin/hourly/")
-                    .setHeader("x-rapidapi-key", "14afbecc82mshc0bf7999f7591d4p1e2789jsna173467eac5b")
-                    .setHeader("x-rapidapi-host", "forecast9.p.rapidapi.com")
-                    .execute()
+            // Build the request with dynamic headers
+            org.asynchttpclient.RequestBuilder requestBuilder = new org.asynchttpclient.RequestBuilder("GET")
+                    .setUrl("https://forecast9.p.rapidapi.com/rapidapi/forecast/Berlin/hourly/");
+            headers.forEach(requestBuilder::addHeader);
+
+            asyncHttpClient.executeRequest(requestBuilder.build())
                     .toCompletableFuture()
                     .thenAccept(response -> {
-
-                        future.complete(response.getResponseBody());
-
+//                        if (response.getStatusCode() == 200) {
+                            future.complete(response.getResponseBody());
+//                        } else {
+//                            future.completeExceptionally(new RuntimeException("Failed to fetch hourly data"));
+//                        }
                     }).exceptionally(ex -> {
                         future.completeExceptionally(ex);
                         return null;
